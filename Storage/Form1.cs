@@ -14,7 +14,9 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Collections;
 using System.Data.Common;
 using System.Collections.ObjectModel;
-//Data Source=MYCOMPUCTERONLY\MSSQLSERVER_2022;Initial Catalog=storageDB;Integrated Security=True
+using System.Data.Sql;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+
 namespace Storage
 {
     public partial class Form1 : Form
@@ -33,10 +35,15 @@ namespace Storage
         {
             if (connection == null || connection.State == ConnectionState.Closed)
             {
-                string connectionString =  $"Data Source={textBoxServerName.Text};Initial Catalog=MyDatabase;Integrated Security=True";
+                string connectionString = $"Data Source=***;Initial Catalog=***;User ID=***;Password=***;Pooling=True;";
+                SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(connectionString);
+                builder.DataSource = comboBoxServer.Text;
+                builder.InitialCatalog = "master";
+                builder.UserID = textBoxUserName.Text;
+                builder.Password = textBoxPassword.Text;
                 try
                 {
-                    connection = new SqlConnection(connectionString);
+                    connection = new SqlConnection(builder.ConnectionString);
                     connection.Open();
                     string queries = File.ReadAllText(path2sqlCreate); 
                     string[] queryArrayCreate = Regex.Split(queries, @"\bGO\b", RegexOptions.IgnoreCase);
@@ -126,9 +133,16 @@ namespace Storage
 
         private void buttonShowReport_Click(object sender, EventArgs e)
         {
-            Form childForm = new Form();
+            // Не понимаю, по логике форма должна закрываться если существует, а они всё равно плодятся
+            Form childForm = new Form(); ;
+            if (childForm != null || !childForm.IsDisposed)
+            {
+                childForm.Close();
+            }
+            childForm = new Form();
             childForm.MaximumSize = new Size(816, 300);
             childForm.MinimumSize = new Size(816, 400);
+            childForm.StartPosition = FormStartPosition.CenterScreen;
 
             SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM report_quantity_goods", connection);
             DataTable table = new DataTable();
@@ -142,6 +156,32 @@ namespace Storage
             dataGridView.ReadOnly = true;
             childForm.Controls.Add(dataGridView);
             childForm.Show();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            // Этот кусок кода упорно не хотел работать, на форме Label отображался прямоугольной дырой
+            //Form loadingForm = new Form();
+            //loadingForm.FormBorderStyle = FormBorderStyle.None;
+            //loadingForm.Size = new Size(240, 120);
+            //loadingForm.StartPosition = FormStartPosition.CenterScreen;
+
+            //Label label = new Label();
+            //label.Location = new Point(20, 50);
+            //label.Size = new Size(200, 20);
+            //label.Text = "Загрузка серверов.....";
+
+            //loadingForm.Controls.Add(label);
+            //loadingForm.Show();
+
+            MessageBox.Show("Закройте это окно и наберитесь терпения,\nидёт загрузка серверов.");
+            SqlDataSourceEnumerator instance = SqlDataSourceEnumerator.Instance;
+            DataTable table = instance.GetDataSources();
+            foreach (DataRow row in table.Rows)
+            {
+                comboBoxServer.Items.Add(row["ServerName"] + "\\" + row["InstanceName"].ToString());
+            }
+            //loadingForm.Hide();
         }
     }
 }
