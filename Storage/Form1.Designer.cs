@@ -116,7 +116,7 @@
             this.buttonShowReport.Name = "buttonShowReport";
             this.buttonShowReport.Size = new System.Drawing.Size(1334, 23);
             this.buttonShowReport.TabIndex = 9;
-            this.buttonShowReport.Text = "Показать отчёт за день";
+            this.buttonShowReport.Text = "Показать/обновить отчёт за день";
             this.buttonShowReport.UseVisualStyleBackColor = true;
             this.buttonShowReport.Click += new System.EventHandler(this.buttonShowReport_Click);
             // 

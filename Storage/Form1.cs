@@ -1,21 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
 using System.IO;
 using System.Text.RegularExpressions;
-using static System.Net.Mime.MediaTypeNames;
-using System.Collections;
-using System.Data.Common;
-using System.Collections.ObjectModel;
 using System.Data.Sql;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Storage
 {
@@ -24,11 +14,14 @@ namespace Storage
         private string path2sqlCreate = Environment.CurrentDirectory + "\\Create.sql";
         private string path2sqlInsert = Environment.CurrentDirectory + "\\Insert.sql";
         private SqlConnection connection;
+        private Form childForm;
+
         public Form1()
         {
             InitializeComponent();
             this.StartPosition = FormStartPosition.Manual;
             this.Location = new Point(0, 0);
+            childForm = new Form();
         }
 
         private void buttonConnect_Click(object sender, EventArgs e)
@@ -129,12 +122,20 @@ namespace Storage
             updateCommand.Parameters.AddWithValue("@newValue", newValue);
             updateCommand.Parameters.AddWithValue("@id", id);
             updateCommand.ExecuteNonQuery();
+
+            string updateQuery001 = $"UPDATE report_quantity_goods SET quantity_goods = @newValue WHERE id_FK_goods_{_tablename} = @id";
+            SqlCommand updateCommand001 = new SqlCommand(updateQuery001, connection);
+            updateCommand001.Parameters.AddWithValue("@newValue", newValue);
+            updateCommand001.Parameters.AddWithValue("@id", id);
+            updateCommand001.ExecuteNonQuery();
+
+            string updateQuery002 = $"UPDATE report_quantity_goods SET report_date = GETDATE();";
+            SqlCommand updateCommand002 = new SqlCommand(updateQuery002, connection);
+            updateCommand002.ExecuteNonQuery();
         }
 
         private void buttonShowReport_Click(object sender, EventArgs e)
         {
-            // Не понимаю, по логике форма должна закрываться если существует, а они всё равно плодятся
-            Form childForm = new Form(); ;
             if (childForm != null || !childForm.IsDisposed)
             {
                 childForm.Close();
@@ -142,7 +143,8 @@ namespace Storage
             childForm = new Form();
             childForm.MaximumSize = new Size(816, 300);
             childForm.MinimumSize = new Size(816, 400);
-            childForm.StartPosition = FormStartPosition.CenterScreen;
+            childForm.StartPosition = FormStartPosition.Manual;
+            childForm.Location = new Point(Screen.PrimaryScreen.WorkingArea.Width - childForm.Width, Screen.PrimaryScreen.WorkingArea.Height - childForm.Height);
 
             SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM report_quantity_goods", connection);
             DataTable table = new DataTable();
@@ -160,7 +162,7 @@ namespace Storage
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            // Этот кусок кода упорно не хотел работать, на форме Label отображался прямоугольной дырой
+            // Этот кусок кода упорно не хочет работать, на форме Label отображался прямоугольной дырой
             //Form loadingForm = new Form();
             //loadingForm.FormBorderStyle = FormBorderStyle.None;
             //loadingForm.Size = new Size(240, 120);
@@ -173,6 +175,10 @@ namespace Storage
 
             //loadingForm.Controls.Add(label);
             //loadingForm.Show();
+            this.StartPosition = FormStartPosition.Manual;
+            this.Location = new Point(0, 0);
+
+            
 
             MessageBox.Show("Закройте это окно и наберитесь терпения,\nидёт загрузка серверов.");
             SqlDataSourceEnumerator instance = SqlDataSourceEnumerator.Instance;
